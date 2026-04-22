@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diana & Michel — Live Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent:  #0891b2;
+    --accent-l:#e0f7fa;
+    --bg:      #ffffff;
+    --bg2:     #f8f9fa;
+    --border:  #e9ecef;
+    --dark:    #111827;
+    --mid:     #6b7280;
+    --light:   #9ca3af;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--dark);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 2.8rem 2rem 2rem;
+    text-align: center;
+  }
+  .eyebrow {
+    font-size: .5rem; letter-spacing: .4em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: .9rem; font-weight: 500;
+  }
+  h1 {
+    font-size: clamp(2rem, 6vw, 3.2rem);
+    font-weight: 300; letter-spacing: -.03em;
+    color: var(--dark); line-height: 1;
+  }
+  h1 strong { font-weight: 600; }
+  h1 .amp { color: var(--accent); font-weight: 300; margin: 0 .15em; }
+  .trip-meta {
+    margin-top: .7rem; font-size: .52rem; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--light);
+  }
+
+  /* ── CLOCK BAR ── */
+  .clock-bar {
+    display: flex; border-bottom: 1px solid var(--border);
+  }
+  .clock-cell {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 1.2rem 1rem; gap: .2rem;
+  }
+  .clock-cell + .clock-cell { border-left: 1px solid var(--border); }
+  .clock-label {
+    font-size: .46rem; letter-spacing: .3em; text-transform: uppercase;
+    color: var(--accent); font-weight: 500;
+  }
+  .clock-time {
+    font-size: 1.7rem; font-weight: 300; letter-spacing: -.03em;
+    color: var(--dark); font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .clock-date { font-size: .48rem; color: var(--light); letter-spacing: .06em; }
+
+  /* ── STATUS BANNER ── */
+  .status-banner {
+    text-align: center; padding: .55rem 1rem;
+    font-size: .48rem; letter-spacing: .22em; text-transform: uppercase;
+    font-weight: 600; transition: background .4s, color .4s;
+  }
+  .status-here    { background: var(--dark);   color: #fff; }
+  .status-flying  { background: var(--accent); color: #fff; }
+  .status-transit { background: #374151;       color: #fff; }
+  .status-waiting { background: var(--bg2);    color: var(--light); border-bottom: 1px solid var(--border); }
+
+  /* ── CONTAINER ── */
+  .container { max-width: 780px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+
+  /* ── NOW CARD ── */
+  .now-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem 2.2rem;
+    margin-bottom: 3rem;
+    display: none;
+  }
+  .now-pill {
+    display: inline-flex; align-items: center; gap: .35rem;
+    background: var(--accent-l); border-radius: 99px;
+    padding: .2rem .65rem;
+    font-size: .46rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--accent); font-weight: 500;
+    margin-bottom: .9rem;
+  }
+  .now-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent); animation: blink 1.6s infinite;
+    flex-shrink: 0;
+  }
+  .now-location {
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-weight: 300; letter-spacing: -.02em;
+    color: var(--dark); line-height: 1; margin-bottom: .25rem;
+  }
+  .now-country {
+    font-size: .5rem; color: var(--light); letter-spacing: .18em;
+    text-transform: uppercase; margin-bottom: 1.5rem;
+  }
+  .times-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  }
+  .time-block {
+    padding: 1rem 1.2rem;
+  }
+  .time-block + .time-block { border-left: 1px solid var(--border); }
+  .tg-label {
+    font-size: .44rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--light); margin-bottom: .4rem; font-weight: 500;
+  }
+  .milan-block .tg-label { color: var(--mid); }
+  .local-block .tg-label { color: var(--accent); }
+  .tg-time {
+    font-size: 1.9rem; font-weight: 300; letter-spacing: -.03em;
+    color: var(--dark); font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .tg-sub { font-size: .46rem; color: var(--light); margin-top: .35rem; }
+  .diff-badge {
+    display: inline-block; margin-top: .5rem;
+    background: var(--accent-l); color: var(--accent);
+    border-radius: 4px; padding: .12rem .45rem;
+    font-size: .44rem; letter-spacing: .1em; font-weight: 500;
+  }
+
+  /* ── TIMELINE ── */
+  .tl-header {
+    font-size: .46rem; letter-spacing: .35em; text-transform: uppercase;
+    color: var(--light); display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 2rem; font-weight: 500;
+  }
+  .tl-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .timeline { display: flex; flex-direction: column; }
+
+  .leg {
+    display: grid; grid-template-columns: 60px 1fr;
+    gap: 1rem; animation: fadeUp .35s ease both;
+  }
+
+  .leg-date-col { text-align: right; padding-top: .2rem; }
+  .leg-weekday  { font-size: .42rem; color: var(--light); text-transform: uppercase; letter-spacing: .08em; }
+  .leg-day-num  { font-size: 1.4rem; font-weight: 300; color: var(--dark); line-height: 1.1; letter-spacing: -.02em; }
+  .leg-month-str{ font-size: .42rem; color: var(--accent); text-transform: uppercase; letter-spacing: .12em; font-weight: 500; }
+
+  .leg-track { display: flex; align-items: flex-start; padding-top: .15rem; position: relative; }
+  .leg:not(:last-child) .leg-track::before {
+    content: ''; position: absolute; left: 5px; top: 12px;
+    width: 1px; bottom: -1rem; background: var(--border);
+  }
+  .leg-dot-wrap {
+    width: 12px; flex-shrink: 0; display: flex; justify-content: center;
+    margin-right: .9rem; margin-top: .25rem; position: relative; z-index: 1;
+  }
+  .leg-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 1.5px solid var(--border); background: var(--bg);
+    transition: all .3s;
+  }
+  .leg-dot.active {
+    border-color: var(--accent); background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-l);
+  }
+  .leg-dot.past { border-color: var(--border); background: var(--border); }
+
+  .leg-body { flex: 1; padding-bottom: 1.8rem; }
+
+  .leg-type-row { display: flex; align-items: center; gap: .4rem; margin-bottom: .18rem; }
+  .leg-emoji    { font-size: .9rem; line-height: 1; }
+  .leg-type-label { font-size: .42rem; letter-spacing: .2em; text-transform: uppercase; color: var(--light); }
+  .now-tag {
+    background: var(--accent); color: #fff;
+    font-size: .4rem; letter-spacing: .12em; padding: .1rem .4rem;
+    border-radius: 99px; text-transform: uppercase; animation: blink-bg 2s infinite;
+    font-weight: 500;
+  }
+
+  .leg-name {
+    font-size: 1rem; font-weight: 500; letter-spacing: -.01em;
+    color: var(--dark); line-height: 1.25; margin-bottom: .3rem;
+  }
+  .leg-country { font-size: .48rem; color: var(--light); font-weight: 400; margin-left: .3rem; }
+  .leg-desc { font-size: .52rem; color: var(--mid); line-height: 1.75; margin-bottom: .6rem; }
+
+  /* TIME ROW */
+  .leg-time-row {
+    display: flex; border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+    font-variant-numeric: tabular-nums;
+  }
+  .ltr-col {
+    flex: 1; padding: .6rem .8rem; display: flex; flex-direction: column; gap: .12rem;
+    background: var(--bg2);
+  }
+  .ltr-col:first-child { border-right: 1px solid var(--border); }
+  .ltr-flag-label {
+    font-size: .4rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--light); display: flex; align-items: center; gap: .25rem; font-weight: 500;
+  }
+  .ltr-times { display: flex; align-items: baseline; gap: .3rem; }
+  .ltr-from  { font-size: .88rem; font-weight: 600; color: var(--dark); }
+  .ltr-arrow { font-size: .65rem; color: var(--light); }
+  .ltr-to    { font-size: .88rem; font-weight: 600; color: var(--dark); }
+  .ltr-dates { font-size: .4rem; color: var(--light); }
+
+  /* ANIMATIONS */
+  @keyframes blink    { 0%,100%{opacity:1} 50%{opacity:.25} }
+  @keyframes blink-bg { 0%,100%{opacity:1} 50%{opacity:.65} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  footer {
+    text-align: center; padding: 2rem;
+    font-size: .45rem; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--light); border-top: 1px solid var(--border);
+  }
+
+  @media(max-width:560px){
+    .times-grid { grid-template-columns: 1fr; }
+    .time-block + .time-block { border-left: none; border-top: 1px solid var(--border); }
+    .leg { grid-template-columns: 52px 1fr; gap: .7rem; }
+    .now-card { padding: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">📍 Live travel tracker</div>
+  <h1><strong>Diana</strong> <span class="amp">&</span> <strong>Michel</strong></h1>
+  <div class="trip-meta">Australia · Isole Cook · Nuova Zelanda &nbsp;·&nbsp; Apr – Mag 2026</div>
+</header>
+
+<div class="clock-bar">
+  <div class="clock-cell">
+    <div class="clock-label">🇮🇹 Ora Milano</div>
+    <div class="clock-time" id="milan-time">--:--:--</div>
+    <div class="clock-date" id="milan-date">—</div>
+  </div>
+  <div class="clock-cell">
+    <div class="clock-label" id="local-label">📍 Ora locale</div>
+    <div class="clock-time" id="local-time">--:--:--</div>
+    <div class="clock-date" id="local-date">—</div>
+  </div>
+</div>
+
+<div class="status-banner status-waiting" id="status-banner">Caricamento…</div>
+
+<div class="container">
+
+  <div class="now-card" id="now-card">
+    <div class="now-pill"><span class="now-dot"></span> Posizione live</div>
+    <div class="now-location" id="now-location">—</div>
+    <div class="now-country"  id="now-country">—</div>
+    <div class="times-grid">
+      <div class="time-block milan-block">
+        <div class="tg-label">🇮🇹 Milano</div>
+        <div class="tg-time" id="now-milan-time">--:--:--</div>
+        <div class="tg-sub"  id="now-milan-date">—</div>
+      </div>
+      <div class="time-block local-block">
+        <div class="tg-label" id="now-local-label">📍 Locale</div>
+        <div class="tg-time" id="now-local-time">--:--:--</div>
+        <div class="tg-sub"  id="now-local-tz">—</div>
+        <div class="diff-badge" id="now-diff">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tl-header">Itinerario completo</div>
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<footer>Aggiornato ogni secondo in tempo reale &nbsp;·&nbsp; Fatto con ❤️ per Diana & Michel</footer>
+
+<script>
+// ── ITINERARY ─────────────────────────────────────────────────────────────
+const legs = [
+  { start:'2026-04-25T00:00', end:'2026-04-25T22:15',
+    tz:'Europe/Rome', endTz:'Europe/Rome',
+    location:'Milano', country:'Italia 🇮🇹', emoji:'🏠', type:'Partenza',
+    detail:''},
+
+  { start:'2026-04-25T22:15', end:'2026-04-26T07:10',
+    tz:'Europe/Rome', endTz:'Asia/Dubai',
+    location:'In volo', country:'Milano → Dubai', emoji:'✈️', type:'Volo',
+    detail:'Emirates EK 092'},
+
+  { start:'2026-04-26T10:05', end:'2026-04-27T05:30',
+    tz:'Asia/Dubai', endTz:'Australia/Melbourne',
+    location:'In volo', country:'Dubai → Melbourne', emoji:'✈️', type:'Volo',
+    detail:'Emirates EK 406'},
+
+  { start:'2026-04-27T10:25', end:'2026-04-27T11:15',
+    tz:'Australia/Melbourne', endTz:'Australia/Adelaide',
+    location:'In volo', country:'Melbourne → Adelaide', emoji:'✈️', type:'Volo',
+    detail:'Emirates EK 5679'},
+
+  { start:'2026-04-27T11:15', end:'2026-04-29T09:00',
+    tz:'Australia/Adelaide', endTz:'Australia/Adelaide',
+    location:'Adelaide', country:'South Australia 🇦🇺', emoji:'🏙️', type:'Tappa',
+    detail:''},
+
+  { start:'2026-04-29T09:00', end:'2026-04-29T13:00',
+    tz:'Australia/Adelaide', endTz:'Australia/Adelaide',
+    location:'In viaggio', country:'Adelaide → Kangaroo Island', emoji:'🚗⛴️', type:'Trasferimento',
+    detail:'Traghetto da Cape Jervis ore 12:00'},
+
+  { start:'2026-04-29T13:00', end:'2026-05-01T10:30',
+    tz:'Australia/Adelaide', endTz:'Australia/Adelaide',
+    location:'Kangaroo Island', country:'South Australia 🇦🇺', emoji:'🦘', type:'Tappa',
+    detail:''},
+
+  { start:'2026-05-01T10:30', end:'2026-05-01T18:00',
+    tz:'Australia/Adelaide', endTz:'Australia/Adelaide',
+    location:'In viaggio', country:'Kangaroo Island → Robe', emoji:'⛴️🚗', type:'Trasferimento',
+    detail:'Traghetto da Penneshaw ore 10:30 · Coorong National Park'},
+
+  { start:'2026-05-01T18:00', end:'2026-05-02T09:00',
+    tz:'Australia/Adelaide', endTz:'Australia/Adelaide',
+    location:'Robe', country:'South Australia 🇦🇺', emoji:'🌊', type:'Tappa',
+    detail:''},
+
+  { start:'2026-05-02T09:00', end:'2026-05-02T18:00',
+    tz:'Australia/Adelaide', endTz:'Australia/Melbourne',
+    location:'In viaggio', country:'Robe → Port Campbell', emoji:'🚗', type:'Trasferimento',
+    detail:'Great Ocean Road · 12 Apostoli · Mount Gambier'},
+
+  { start:'2026-05-02T18:00', end:'2026-05-03T09:00',
+    tz:'Australia/Melbourne', endTz:'Australia/Melbourne',
+    location:'Port Campbell', country:'Victoria 🇦🇺', emoji:'🌊', type:'Tappa',
+    detail:''},
+
+  { start:'2026-05-03T09:00', end:'2026-05-03T19:00',
+    tz:'Australia/Melbourne', endTz:'Australia/Melbourne',
+    location:'In viaggio', country:'Port Campbell → Phillip Island', emoji:'🚗⛴️', type:'Trasferimento',
+    detail:'Parco Otway · Lorne · Torquay · Traghetto Queenscliff→Sorrento ore 13:00'},
+
+  { start:'2026-05-03T19:00', end:'2026-05-03T21:00',
+    tz:'Australia/Melbourne', endTz:'Australia/Melbourne',
+    location:'Phillip Island', country:'Victoria 🇦🇺', emoji:'🐧', type:'Attività',
+    detail:'Parata dei Pinguini'},
+
+  { start:'2026-05-03T21:00', end:'2026-05-04T09:00',
+    tz:'Australia/Melbourne', endTz:'Australia/Melbourne',
+    location:'Phillip Island', country:'Victoria 🇦🇺', emoji:'🏝️', type:'Tappa',
+    detail:''},
+
+  { start:'2026-05-04T09:00', end:'2026-05-04T18:00',
+    tz:'Australia/Melbourne', endTz:'Australia/Melbourne',
+    location:'In viaggio', country:'Phillip Island → Melbourne', emoji:'🚗', type:'Trasferimento',
+    detail:'Via San Remo'},
+
+  { start:'2026-05-04T18:00', end:'2026-05-07T08:30',
+    tz:'Australia/Melbourne', endTz:'Australia/Melbourne',
+    location:'Melbourne', country:'Victoria 🇦🇺', emoji:'🏙️', type:'Tappa',
+    detail:'05/05: Free Walking Tour · Federation Square ore 11:00'},
+
+  { start:'2026-05-07T08:50', end:'2026-05-07T11:30',
+    tz:'Australia/Melbourne', endTz:'Australia/Adelaide',
+    location:'In volo', country:'Melbourne → Ayers Rock', emoji:'✈️', type:'Volo',
+    detail:'Jetstar JQ 664'},
+
+  { start:'2026-05-07T11:30', end:'2026-05-09T14:00',
+    tz:'Australia/Adelaide', endTz:'Australia/Adelaide',
+    location:'Ayers Rock – Uluru', country:'Northern Territory 🇦🇺', emoji:'🪨', type:'Tappa',
+    detail:'07/05 ore 14:30: Tramonto a Uluru 🌅\n08/05 ore 10:00: Volo in elicottero 🚁 · ore 19:05: Field of Light ✨\n09/05 ore 06:00: Alba a Kata Tjuta 🌄'},
+
+  { start:'2026-05-09T14:40', end:'2026-05-09T18:10',
+    tz:'Australia/Adelaide', endTz:'Australia/Sydney',
+    location:'In volo', country:'Ayers Rock → Sydney', emoji:'✈️', type:'Volo',
+    detail:'Jetstar JQ 661'},
+
+  { start:'2026-05-09T18:10', end:'2026-05-12T21:30',
+    tz:'Australia/Sydney', endTz:'Australia/Sydney',
+    location:'Sydney', country:'New South Wales 🇦🇺', emoji:'🌉', type:'Tappa',
+    detail:'10/05 ore 13:00: Free Walking Tour · Circular Quay\n10/05 ore 14:55: BridgeClimb al tramonto 🌉'},
+
+  { start:'2026-05-12T21:30', end:'2026-05-13T07:20',
+    tz:'Australia/Sydney', endTz:'Pacific/Rarotonga',
+    location:'In volo', country:'Sydney → Rarotonga', emoji:'✈️', type:'Volo',
+    detail:'Jetstar JQ 113 · cambio data internazionale'},
+
+  { start:'2026-05-13T16:00', end:'2026-05-13T16:50',
+    tz:'Pacific/Rarotonga', endTz:'Pacific/Rarotonga',
+    location:'In volo', country:'Rarotonga → Aitutaki', emoji:'✈️', type:'Volo',
+    detail:'Air Rarotonga GZ618'},
+
+  { start:'2026-05-13T17:00', end:'2026-05-18T11:40',
+    tz:'Pacific/Rarotonga', endTz:'Pacific/Rarotonga',
+    location:'Aitutaki', country:'Isole Cook 🏝️', emoji:'🌺', type:'Tappa',
+    detail:''},
+
+  { start:'2026-05-18T11:40', end:'2026-05-18T12:30',
+    tz:'Pacific/Rarotonga', endTz:'Pacific/Rarotonga',
+    location:'In volo', country:'Aitutaki → Rarotonga', emoji:'✈️', type:'Volo',
+    detail:'Air Rarotonga GZ615'},
+
+  { start:'2026-05-18T15:45', end:'2026-05-19T18:15',
+    tz:'Pacific/Rarotonga', endTz:'Pacific/Auckland',
+    location:'In volo', country:'Rarotonga → Auckland', emoji:'✈️', type:'Volo',
+    detail:'Air New Zealand NZ 945'},
+
+  { start:'2026-05-19T18:15', end:'2026-05-21T20:30',
+    tz:'Pacific/Auckland', endTz:'Pacific/Auckland',
+    location:'Auckland', country:'Nuova Zelanda 🇳🇿', emoji:'⛵', type:'Tappa',
+    detail:''},
+
+  { start:'2026-05-21T20:30', end:'2026-05-22T05:35',
+    tz:'Pacific/Auckland', endTz:'Asia/Dubai',
+    location:'In volo', country:'Auckland → Dubai', emoji:'✈️', type:'Volo',
+    detail:'Emirates EK 449'},
+
+  { start:'2026-05-22T09:35', end:'2026-05-22T14:10',
+    tz:'Asia/Dubai', endTz:'Europe/Rome',
+    location:'In volo', country:'Dubai → Milano', emoji:'✈️', type:'Volo',
+    detail:'Emirates EK 205'},
+
+  { start:'2026-05-22T14:10', end:'2026-05-23T00:00',
+    tz:'Europe/Rome', endTz:'Europe/Rome',
+    location:'Milano', country:'Italia 🇮🇹', emoji:'🏠', type:'Ritorno',
+    detail:'🎉 Bentornati!'},
+];
+
+// ── TIMEZONES ──────────────────────────────────────────────────────────────
+const TZ = {
+  'Europe/Rome':120, 'Asia/Dubai':240,
+  'Australia/Melbourne':600, 'Australia/Adelaide':570, 'Australia/Sydney':600,
+  'Pacific/Rarotonga':-600, 'Pacific/Auckland':720,
+};
+const TZ_LABEL = {
+  'Europe/Rome':'CEST UTC+2', 'Asia/Dubai':'GST UTC+4',
+  'Australia/Melbourne':'AEST UTC+10', 'Australia/Adelaide':'ACST UTC+9:30',
+  'Australia/Sydney':'AEST UTC+10',
+  'Pacific/Rarotonga':'CKT UTC−10', 'Pacific/Auckland':'NZST UTC+12',
+};
+
+function toUtc(iso, tz) {
+  const [d,t] = iso.split('T');
+  const [y,mo,dd] = d.split('-').map(Number);
+  const [hh,mm]   = (t||'00:00').split(':').map(Number);
+  return Date.UTC(y,mo-1,dd,hh,mm) - (TZ[tz]||0)*60000;
+}
+function local(utcMs, tz) { return new Date(utcMs + (TZ[tz]||0)*60000); }
+function fmtHMS(utcMs,tz){ const d=local(utcMs,tz); return [d.getUTCHours(),d.getUTCMinutes(),d.getUTCSeconds()].map(n=>String(n).padStart(2,'0')).join(':'); }
+function fmtHM(utcMs,tz) { const d=local(utcMs,tz); return [d.getUTCHours(),d.getUTCMinutes()].map(n=>String(n).padStart(2,'0')).join(':'); }
+function fmtDateShort(utcMs,tz){
+  const d=local(utcMs,tz);
+  const MO=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+  return `${d.getUTCDate()} ${MO[d.getUTCMonth()]}`;
+}
+function fmtDateLong(utcMs,tz){
+  const d=local(utcMs,tz);
+  const WD=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  const MO=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+  return `${WD[d.getUTCDay()]} ${d.getUTCDate()} ${MO[d.getUTCMonth()]}`;
+}
+
+function diffStr(tz){
+  const d=(TZ[tz]||0)-120;
+  if(d===0) return 'stessa ora di Milano';
+  const sign=d>0?'+':'−'; const abs=Math.abs(d);
+  const h=Math.floor(abs/60), m=abs%60;
+  return m===0?`${sign}${h}h rispetto a Milano`:`${sign}${h}h ${m}m rispetto a Milano`;
+}
+
+function currentLeg(now){
+  for(let i=0;i<legs.length;i++){
+    const s=toUtc(legs[i].start,legs[i].tz), e=toUtc(legs[i].end,legs[i].endTz);
+    if(now>=s&&now<e) return i;
+  }
+  return now<toUtc(legs[0].start,legs[0].tz) ? -1 : legs.length;
+}
+
+// ── BUILD TIME ROW ─────────────────────────────────────────────────────────
+// Shows: [🇮🇹 Milano: HH:MM → HH:MM  dd mmm] | [📍 Locale: HH:MM → HH:MM  dd mmm]
+// If startDate == endDate for a column, only one date shown.
+// If both timezones are the same (Europe/Rome leg), hide the right column.
+function buildTimeRow(leg) {
+  const sUtc = toUtc(leg.start, leg.tz);
+  const eUtc = toUtc(leg.end,   leg.endTz);
+  const sameAsMilan = leg.tz === 'Europe/Rome' && leg.endTz === 'Europe/Rome';
+
+  function col(tz, endTz, label, flag) {
+    const fromHM  = fmtHM(sUtc, tz);
+    const toHM    = fmtHM(eUtc, endTz);
+    const fromDate= fmtDateShort(sUtc, tz);
+    const toDate  = fmtDateShort(eUtc, endTz);
+    const sameDay = fromDate === toDate;
+    const dateStr = sameDay ? fromDate : `${fromDate} → ${toDate}`;
+    return `
+      <div class="ltr-col">
+        <div class="ltr-flag-label">${flag} ${label}</div>
+        <div class="ltr-times">
+          <span class="ltr-from">${fromHM}</span>
+          <span class="ltr-arrow">→</span>
+          <span class="ltr-to">${toHM}</span>
+        </div>
+        <div class="ltr-dates">${dateStr}</div>
+      </div>`;
+  }
+
+  const milanCol = col('Europe/Rome', 'Europe/Rome', 'Milano', '🇮🇹');
+  const localCol = sameAsMilan ? '' : col(leg.tz, leg.endTz, 'Locale', '📍');
+
+  return `<div class="leg-time-row">${milanCol}${localCol}</div>`;
+}
+
+// ── RENDER TIMELINE ────────────────────────────────────────────────────────
+function renderTimeline(nowUtc) {
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+  const WD=['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+  const MO=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+
+  legs.forEach((leg,i)=>{
+    const sUtc=toUtc(leg.start,leg.tz), eUtc=toUtc(leg.end,leg.endTz);
+    const isPast=nowUtc>=eUtc, isActive=nowUtc>=sUtc&&nowUtc<eUtc;
+    const sd=local(sUtc, leg.tz);
+
+    const el=document.createElement('div');
+    el.className='leg';
+    el.style.animationDelay=`${Math.min(i*.03,.5)}s`;
+    el.innerHTML=`
+      <div class="leg-date-col">
+        <div class="leg-weekday">${WD[sd.getUTCDay()]}</div>
+        <div class="leg-day-num">${sd.getUTCDate()}</div>
+        <div class="leg-month-str">${MO[sd.getUTCMonth()]}</div>
+      </div>
+      <div class="leg-track">
+        <div class="leg-dot-wrap">
+          <div class="leg-dot ${isActive?'active':isPast?'past':''}"></div>
+        </div>
+        <div class="leg-body">
+          <div class="leg-type-row">
+            <span class="leg-emoji">${leg.emoji}</span>
+            <span class="leg-type-label">${leg.type}</span>
+            ${isActive?'<span class="now-tag">← ora qui</span>':''}
+          </div>
+          <div class="leg-name">${leg.location}${leg.country?`<span class="leg-country">· ${leg.country}</span>`:''}
+          </div>
+          ${leg.detail?`<div class="leg-desc">${leg.detail.replace(/\n/g,'<br>')}</div>`:''}
+          ${buildTimeRow(leg)}
+        </div>
+      </div>`;
+    tl.appendChild(el);
+  });
+}
+
+// ── TICK ───────────────────────────────────────────────────────────────────
+let lastIdx=null;
+
+function tick(){
+  const now=Date.now();
+  const idx=currentLeg(now);
+
+  document.getElementById('milan-time').textContent=fmtHMS(now,'Europe/Rome');
+  document.getElementById('milan-date').textContent=fmtDateLong(now,'Europe/Rome');
+
+  const banner=document.getElementById('status-banner');
+  const card=document.getElementById('now-card');
+
+  if(idx>=0&&idx<legs.length){
+    const leg=legs[idx]; const tz=leg.tz;
+
+    document.getElementById('local-label').textContent=`${leg.emoji} Ora locale`;
+    document.getElementById('local-time').textContent=fmtHMS(now,tz);
+    document.getElementById('local-date').textContent=fmtDateLong(now,tz);
+
+    if(leg.type==='Volo'){
+      banner.textContent=`✈️  Diana & Michel sono in volo — ${leg.country}`;
+      banner.className='status-banner status-flying';
+    } else if(leg.type==='Trasferimento'){
+      banner.textContent=`🚗  Diana & Michel sono in viaggio — ${leg.country}`;
+      banner.className='status-banner status-transit';
+    } else {
+      banner.textContent=`📍  Diana & Michel sono a ${leg.location}`;
+      banner.className='status-banner status-here';
+    }
+
+    card.style.display='block';
+    document.getElementById('now-location').textContent=`${leg.emoji} ${leg.location}`;
+    document.getElementById('now-country').textContent=leg.country;
+    document.getElementById('now-milan-time').textContent=fmtHMS(now,'Europe/Rome');
+    document.getElementById('now-milan-date').textContent=fmtDateLong(now,'Europe/Rome');
+    document.getElementById('now-local-label').textContent=`${leg.emoji} Locale`;
+    document.getElementById('now-local-time').textContent=fmtHMS(now,tz);
+    document.getElementById('now-local-tz').textContent=TZ_LABEL[tz]||tz;
+    document.getElementById('now-diff').textContent=diffStr(tz);
+
+  } else if(idx===-1){
+    banner.textContent='🗓️  Il viaggio non è ancora iniziato — Partenza 25 aprile 2026';
+    banner.className='status-banner status-waiting';
+    document.getElementById('local-label').textContent='🇮🇹 Ora locale';
+    document.getElementById('local-time').textContent=fmtHMS(now,'Europe/Rome');
+    document.getElementById('local-date').textContent=fmtDateLong(now,'Europe/Rome');
+    card.style.display='none';
+  } else {
+    banner.textContent='🏠  Diana & Michel sono tornati a Milano — Bentornati!';
+    banner.className='status-banner status-here';
+    document.getElementById('local-label').textContent='🇮🇹 Ora locale';
+    document.getElementById('local-time').textContent=fmtHMS(now,'Europe/Rome');
+    document.getElementById('local-date').textContent=fmtDateLong(now,'Europe/Rome');
+    card.style.display='none';
+  }
+
+  if(idx!==lastIdx){ renderTimeline(now); lastIdx=idx; }
+}
+
+tick();
+setInterval(tick,1000);
+</script>
+</body>
+</html>
